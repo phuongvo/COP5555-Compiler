@@ -23,9 +23,13 @@ public class CompoundType extends Type {
 	    if (obj == null) return false;
 	    if (obj == this) return true;
 	    
-		CompoundType type = (CompoundType) obj;
-		if(this.keyType.type == type.keyType.type)
-			return this.valType.type == type.valType.type;
+	    Type type = (Type) obj;
+	    if( (this.type != Kind.MAP) || (type.type != Kind.MAP))
+	    	return false;
+	    
+		CompoundType ctype = (CompoundType) obj;
+		if(this.keyType.type == ctype.keyType.type)
+			return this.valType.type == ctype.valType.type;
 		else
 			return false;
 	}

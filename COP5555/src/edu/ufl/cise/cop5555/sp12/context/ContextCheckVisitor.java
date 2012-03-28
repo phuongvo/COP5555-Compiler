@@ -117,22 +117,18 @@ public class ContextCheckVisitor implements ASTVisitor{
 			assignPairListCommand.pairList.visit(this,arg); //visit pairList to make sure all pairs have the same type
 
 
-			Type type = (Type) assignPairListCommand.lValue.visit(this, arg);
+			Type type = (Type) assignPairListCommand.lValue.visit(this, arg);			
 			Type pairKeyType = (Type) pairList.get(0).expression0.visit(this,arg);
 			Type pairValType = (Type) pairList.get(0).expression1.visit(this,arg);
+
+			check(type.type == Kind.MAP, assignPairListCommand, "incompatible types in pairlist assignment");
+
+			CompoundType lValueType = (CompoundType) type;
+			Type keyType = lValueType.keyType;
+			Type valType = lValueType.valType;
+			check(keyType.equals(pairKeyType) && valType.equals(pairValType), 
+					assignPairListCommand, "incompatible types in pairlist assignment");
 			
-			if(type.type == Kind.MAP){
-				CompoundType lValueType = (CompoundType) type;
-				Type keyType = lValueType.keyType;
-				Type valType = lValueType.valType;
-				check(keyType.equals(pairKeyType) && valType.equals(pairValType), 
-						assignPairListCommand, "incompatible types in pairlist assignment");
-			}
-			else{
-				check(type.equals(pairKeyType) && type.equals(pairValType), 
-						assignPairListCommand, "incompatible types in pairlist assignment");
-			}
-				
 		}
 		return null;
 	}
@@ -176,6 +172,12 @@ public class ContextCheckVisitor implements ASTVisitor{
 		String ident1 = doEachCommand.val.getText();		
 		Declaration dec0 = symbolTable.lookup(ident0);
 		Declaration dec1 = symbolTable.lookup(ident1);
+		boolean dec0existInScope = symbolTable.existInScope(ident0);
+		boolean dec1existInScope = symbolTable.existInScope(ident0);
+		check(dec0 != null, doEachCommand, "variable " + ident0 + " does not exist in symbol table");
+		check(dec0existInScope, doEachCommand, "variable " + ident0 + " is undefined in current scope");	
+		check(dec1 != null, doEachCommand, "variable " + ident1 + " does not exist in symbol table");
+		check(dec1existInScope, doEachCommand, "variable " + ident1 + " is undefined in current scope");
 
 		Type ident0Type = dec0.type;
 		Type ident1Type = dec1.type;		
@@ -218,8 +220,8 @@ public class ContextCheckVisitor implements ASTVisitor{
 		String ident = simpleLValue.identifier.getText();
 		Declaration dec = symbolTable.lookup(ident);
 		boolean existInScope = symbolTable.existInScope(ident);		
-		check(dec != null, simpleLValue, "variable doesn't exist in symbol table");
-		check(existInScope, simpleLValue, "vairable is undefined in current scope");	
+		check(dec != null, simpleLValue, "variable  " + ident + " does not exist in symbol table");
+		check(existInScope, simpleLValue, "variable " + ident + " is undefined in current scope");	
 
 		//<SimpleLValue>.type := IDENTIFIER.type where the type of the IDENTIFIER is obtained from the symbol table		
 		return dec.type;
@@ -231,8 +233,8 @@ public class ContextCheckVisitor implements ASTVisitor{
 		String ident = exprLValue.identifier.getText();
 		Declaration dec = symbolTable.lookup(ident);
 		boolean existInScope = symbolTable.existInScope(ident);
-		check(dec != null, exprLValue, "variable doesn't exist in symbol table");
-		check(existInScope, exprLValue, "vairable is undefined in current scope");	
+		check(dec != null, exprLValue, "variable " + ident + "  does not exist in symbol table");
+		check(existInScope, exprLValue, "variable " + ident + " is undefined in current scope");	
 		/* Condition:
 			let IDENTIFIER.type = (keyType,valType)
 			in
@@ -347,11 +349,15 @@ public class ContextCheckVisitor implements ASTVisitor{
 
 		// + can be applied to all types except boolean. The type is the type of the result. 
 		//If one of the arguments is a string, then the result is a string.
-		if(op.equals(Kind.PLUS) && !e0Type.type.equals(Kind.BOOLEAN)) {
-			if(e0Type.type.equals(Kind.STRING) || e1Type.type.equals(Kind.STRING))
-				exprType = new SimpleType(Kind.STRING);
+		if(op.equals(Kind.PLUS)) {
+			if(!e0Type.type.equals(Kind.BOOLEAN)) {
+				if(e0Type.type.equals(Kind.STRING) || e1Type.type.equals(Kind.STRING))
+					exprType = new SimpleType(Kind.STRING);
+				else
+					exprType = e0Type;
+			}
 			else
-				exprType = e0Type;
+				check(false, binaryOpExpression, "cannot add type boolean");
 		}
 
 		//==, !=, >, <, ≤, ≥ apply to any type and the result is boolean
@@ -363,19 +369,27 @@ public class ContextCheckVisitor implements ASTVisitor{
 		if(op.equals(Kind.TIMES) || op.equals(Kind.MINUS)){
 			if(e0Type.type.equals(Kind.INT))
 				exprType = e0Type;
-			if(e0Type.type.equals(Kind.MAP))
+			else if(e0Type.type.equals(Kind.MAP))
 				exprType = e0Type;
+			else
+				check(false, binaryOpExpression, "expecting type int or map in binaryOpExpressions");
+				
 		}
 
 		// / can be applied to integers, the result is the same as the argument type.
-		if(op.equals(Kind.DIVIDE))
+		if(op.equals(Kind.DIVIDE)){
 			if(e0Type.type.equals(Kind.INT))
 				exprType = e0Type;
+			else
+				check(false, binaryOpExpression, "expecting type int in binaryOpExpressions");
+		}
 
 		// & and | can be applied to boolean types, the result is a boolean.
-		if(op.equals(Kind.AND) || op.equals(Kind.OR))
+		if(op.equals(Kind.AND) || op.equals(Kind.OR)){
 			if(e0Type.type.equals(Kind.BOOLEAN))
 				exprType = e0Type;
+			check(false, binaryOpExpression, "expecting type boolean in binaryOpExpressions");
+		}
 
 		return exprType;
 	}

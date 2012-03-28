@@ -43,6 +43,9 @@ public class SymbolTable {
 		ArrayList<Declaration> decList = symbolTable.get(ident);
 		ArrayList<Integer> scopeList = scopeTable.get(ident);
 
+		if(scopeList == null || decList == null)
+			return null;
+		
 		for(int i = scope_stack.size()-1; i >= 0; i--){
 			for(int j = scopeList.size() - 1; j >= 0; j--){
 				if(scopeList.get(j) == scope_stack.get(i)){

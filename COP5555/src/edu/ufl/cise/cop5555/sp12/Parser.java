@@ -428,7 +428,7 @@ public class Parser {
 				"p = {[a,false],[b,false]};" +
 				"g = 1 + \"hi\";" +
 				"if(-a < 3) fi;"+
-				"gorp";*/
+				"gorp";
 		
 		String input ="prog Test1 " +
 				"int x; " +
@@ -497,7 +497,14 @@ public class Parser {
 					"z = x;" +
 				"od;" +
 				"x = y;"+
-			"gorp";
+			"gorp";*/
+		//String input = "prog Test1 int x; boolean y; string s; map [int, string] m; x = s/m; gorp";
+		//String input = "prog Test1 int x; map[int,int] y; x = x * y; gorp";
+		//String input = "prog Test1 int x; map[int,int] y; y = y - x; gorp";
+		String input = "prog Test1 map[int, string] x; x = {[10, \"string\"]} ; gorp"; //fail
+		//String input = "prog Test1 boolean x; boolean y; do(x + y) od; gorp";
+		//String input = "prog Test1 map [int, int] m; int x1; do m :[x1, x2] od; gorp";
+		//String input = "prog Test1 map[int, string] x; map[int, string] y; int z; do x : [z,y] od; gorp";
 		System.out.println(input);
 		TokenStream stream = new TokenStream(input);
 		Scanner scanner = new Scanner(stream);

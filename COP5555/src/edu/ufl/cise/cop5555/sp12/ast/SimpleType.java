@@ -18,7 +18,7 @@ public class SimpleType extends Type {
 	    if (obj == null) return false;
 	    if (obj == this) return true;
 	    
-		SimpleType type = (SimpleType) obj;
+		Type type = (Type) obj;
 			return this.type == type.type;
 	}
 	
