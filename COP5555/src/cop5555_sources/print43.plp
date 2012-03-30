@@ -1,3 +1,14 @@
-prog print43 
-print(43); 
+prog demo
+ 	int x;
+ 	x = 5;
+	print(x);
+	
+	string s;
+	s = "hi";
+	print(s);
+	
+	boolean b;
+	b = true;
+	print(b);
+
 gorp

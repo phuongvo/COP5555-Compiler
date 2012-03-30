@@ -3,9 +3,9 @@ package edu.ufl.cise.cop5555.sp12.ast;
 import edu.ufl.cise.cop5555.sp12.TokenStream.Token;
 
 public class SimpleLValue extends LValue {
-	
-	public final Token identifier;
 
+	public final Token identifier;
+	
 	public SimpleLValue(Token identifier) {
 		this.identifier = identifier;
 	}

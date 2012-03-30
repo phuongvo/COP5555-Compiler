@@ -7,6 +7,7 @@ import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 
+import edu.ufl.cise.cop5555.sp12.Kind;
 import edu.ufl.cise.cop5555.sp12.ast.ASTVisitor;
 import edu.ufl.cise.cop5555.sp12.ast.AssignExprCommand;
 import edu.ufl.cise.cop5555.sp12.ast.AssignPairListCommand;
@@ -31,15 +32,17 @@ import edu.ufl.cise.cop5555.sp12.ast.Program;
 import edu.ufl.cise.cop5555.sp12.ast.SimpleLValue;
 import edu.ufl.cise.cop5555.sp12.ast.SimpleType;
 import edu.ufl.cise.cop5555.sp12.ast.StringLiteralExpression;
+import edu.ufl.cise.cop5555.sp12.ast.Type;
 import edu.ufl.cise.cop5555.sp12.ast.UnaryOpExpression;
 
 public class CodeGenVisitor implements ASTVisitor, Opcodes {
-	
+
 	String className;
 	ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
 	FieldVisitor fv;
 	MethodVisitor mv;
 	AnnotationVisitor av0;
+
 
 	@Override
 	public Object visitProgram(Program program, Object arg) throws Exception {
@@ -77,14 +80,32 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 	@Override
 	public Object visitDeclaration(Declaration declaration, Object arg)
 			throws Exception {
-		// TODO Auto-generated method stub
+		/* Add a static field with name given by the indicator 
+			and appropriate type to the classfile */
+
+		String fieldName = declaration.ident.getText();  
+		String fieldType = (String) declaration.type.visit(this, null);
+		
+		fv = cw.visitField(ACC_STATIC, fieldName, fieldType, null, null);
+		fv.visitEnd();
+
 		return null;
 	}
 
 	@Override
 	public Object visitSimpleType(SimpleType simpleType, Object arg)
-			throws Exception {
-		// TODO Auto-generated method stub
+			throws Exception {		
+		//These types are represented by java int, boolean, and java.lang.String respectively.
+		Kind kind = simpleType.type;
+		switch (kind) {							
+		case INT:
+			return "I";
+		case STRING:
+			return "Ljava/lang/String;";
+		case BOOLEAN:
+			return "Z";
+		}
+		
 		return null;
 	}
 
@@ -98,14 +119,20 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 	@Override
 	public Object visitAssignExprCommand(AssignExprCommand assignExprCommand,
 			Object arg) throws Exception {
-		// TODO Auto-generated method stub
+		// Generate code to evaluate the expression and store the 
+		//results in the variable indicated by the LValue
+		String varName = (String) assignExprCommand.lValue.visit(this, null);	
+
+		String type = (String) assignExprCommand.expression.visit(this, null);		
+		mv.visitFieldInsn(PUTSTATIC, className, varName, type);
+		
 		return null;
 	}
 
 	@Override
 	public Object visitAssignPairListCommand(
 			AssignPairListCommand assignPairListCommand, Object arg)
-			throws Exception {
+					throws Exception {
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -113,17 +140,24 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 	@Override
 	public Object visitPrintCommand(PrintCommand printCommand, Object arg)
 			throws Exception {
-		//TODO Fix this to work with other types
+		//Generate code to invoke System.out.print with the value of the Expression as a parameter.
 		mv.visitFieldInsn(GETSTATIC, "java/lang/System", "out", "Ljava/io/PrintStream;");
-		printCommand.expression.visit(this,arg);
-		mv.visitMethodInsn(INVOKEVIRTUAL, "java/io/PrintStream", "print", "(I)V");			
+		String fieldType = (String) printCommand.expression.visit(this, null);
+		String type = "("+fieldType+")V";
+		
+		mv.visitMethodInsn(INVOKEVIRTUAL, "java/io/PrintStream", "print", type);			
+		
 		return null;
 	}
 
 	@Override
 	public Object visitPrintlnCommand(PrintlnCommand printlnCommand, Object arg)
 			throws Exception {
-		// TODO Auto-generated method stub
+		// Generate code to invoke System.out.println with the value of the Expression as a parameter.
+		mv.visitFieldInsn(GETSTATIC, "java/lang/System", "out", "Ljava/io/PrintStream;");
+		String fieldType = (String) printlnCommand.expression.visit(this, null);
+		String type = "("+fieldType+")V";
+		mv.visitMethodInsn(INVOKEVIRTUAL, "java/io/PrintStream", "println", type);
 		return null;
 	}
 
@@ -158,8 +192,8 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 	@Override
 	public Object visitSimpleLValue(SimpleLValue simpleLValue, Object arg)
 			throws Exception {
-		// TODO Auto-generated method stub
-		return null;
+		// When this appears on the lhs of an assignment, use as target of the assignment
+		return simpleLValue.identifier.getText();
 	}
 
 	@Override
@@ -184,33 +218,43 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 	@Override
 	public Object visitLValueExpression(LValueExpression lValueExpression,
 			Object arg) throws Exception {
-		// TODO Auto-generated method stub
-		return null;
+		// Generate code to leave the value of the expression on top of the stack
+		String varName = (String) lValueExpression.lValue.visit(this, arg);
+		String type = lValueExpression.lValue.type.javaType;
+		
+		mv.visitFieldInsn(GETSTATIC, className, varName, type);		
+		return type;
 	}
 
 	@Override
 	public Object visitIntegerLiteralExpression(
 			IntegerLiteralExpression integerLiteralExpression, Object arg)
-			throws Exception {
+					throws Exception {
 		//gen code to leave value of literal on top of stack
-		mv.visitLdcInsn(integerLiteralExpression.integerLiteral.getIntVal());
-		return null;
+		mv.visitInsn(integerLiteralExpression.integerLiteral.getIntVal());
+		return "I";
 	}
 
 	@Override
 	public Object visitBooleanLiteralExpression(
 			BooleanLiteralExpression booleanLiteralExpression, Object arg)
-			throws Exception {
-		// TODO Auto-generated method stub
-		return null;
+					throws Exception {
+		//gen code to leave value of boolean on top of stack
+		if(booleanLiteralExpression.booleanLiteral.getBoolVal() == 1)
+			mv.visitInsn(ICONST_1);
+		else
+			mv.visitInsn(ICONST_0);	
+		return "Z";
 	}
 
 	@Override
 	public Object visitStringLiteralExpression(
 			StringLiteralExpression stringLiteralExpression, Object arg)
-			throws Exception {
-		// TODO Auto-generated method stub
-		return null;
+					throws Exception {
+		//gen code to leave value of string on top of stack
+		String s = stringLiteralExpression.stringLiteral.getRawText();
+		mv.visitLdcInsn(s);		
+		return "Ljava/lang/String;";
 	}
 
 	@Override

@@ -6,6 +6,13 @@ public class SimpleType extends Type {
 		
 	public SimpleType(Kind type){
 		this.type = type;
+		
+		if(type == Kind.INT)
+			javaType = "I";
+		else if(type == Kind.STRING)
+			javaType = "Ljava/lang/String;";
+		else 
+			javaType = "Z";
 	}
 
 	@Override

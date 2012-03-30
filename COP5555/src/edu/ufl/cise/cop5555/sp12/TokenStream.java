@@ -8,17 +8,17 @@ import java.util.Iterator;
 import java.util.List;
 
 public class TokenStream {
-		
+
 	//This inner class provides an Iterator over the recognized tokens.  
 	//Instances cannot be created directly (the constructor is private); use the public iterator() method.
 	public class TokenStreamIterator implements Iterator<Token>{
-		
+
 		int i = 0;
-		
+
 		private TokenStreamIterator(){
 			super();
 		}
-		
+
 		@Override
 		public boolean hasNext() {
 			return i< tokens.size();
@@ -28,7 +28,7 @@ public class TokenStream {
 		public Token next() {
 			return tokens.get(i++);
 		}
-		
+
 		public int getIndex(){
 			return i;
 		}
@@ -37,9 +37,9 @@ public class TokenStream {
 		public void remove() {
 			throw new UnsupportedOperationException();			
 		}		
-		
+
 	}
-	
+
 	//This method returns a new TokenStreamIterator for this TokenStream instance.
 	public TokenStreamIterator iterator(){
 		return new TokenStreamIterator();
@@ -58,14 +58,14 @@ public class TokenStream {
 	public int[] lineBreaks;
 	public List<Integer> eol; //list of end of line indices
 	public int [] linenum;
-	
+
 	//constructor that takes an array of chars
 	public TokenStream(char[] inputChars) {
 		this.inputChars = inputChars;
 		tokens = new ArrayList<Token>();
 		eol = new ArrayList<Integer>();
 		storeEolIndices();
-	   
+
 	}
 
 	//constructor that takes a Reader.  
@@ -86,7 +86,7 @@ public class TokenStream {
 		eol = new ArrayList<Integer>();
 		storeEolIndices();
 	}
-	
+
 	//utility method
 	//read all the characters from the given Reader into a char array.
 	private char[] getChars(Reader r) {
@@ -104,14 +104,14 @@ public class TokenStream {
 		sb.getChars(0, sb.length(), chars, 0);
 		return chars;
 	}
-	
-    public Token getToken(int i){
-        return tokens.get(i);
-    }
-    
+
+	public Token getToken(int i){
+		return tokens.get(i);
+	}
+
 	//store the indices of the eol characters in an array
 	public void storeEolIndices() {
-		
+
 		for( int i = 0;i < inputChars.length; i++){
 			if(		inputChars[i] == '\n' || inputChars[i] == '\u0085' ||
 					inputChars[i] == '\u2028' || inputChars[i] == '\u2029'){
@@ -124,7 +124,7 @@ public class TokenStream {
 				}
 			}
 		}
-		
+
 		lineBreaks = new int[eol.size()];
 		for( int i = 0;i < eol.size(); i++){
 			lineBreaks[i] = eol.get(i);
@@ -132,10 +132,10 @@ public class TokenStream {
 	}
 
 
-	
-	
-	
-	
+
+
+
+
 	// This is a non-static inner class. Each instance is implicitly linked with an
 	// instance of StreamToken and can access that instance's variables.
 	// Note usage:
@@ -152,12 +152,21 @@ public class TokenStream {
 			this.beg = beg;
 			this.end = end;
 		}
-		
+
 		// this should only be applied to Tokens with kind==INTEGER_LITERAL
 		public int getIntVal() throws NumberFormatException,
-				IllegalStringLiteralException {
+		IllegalStringLiteralException {
 			assert kind == Kind.INTEGER_LITERAL : "attempted to get value of non-number token";
 			return Integer.valueOf(getText());
+		}
+
+		public int getBoolVal() throws NumberFormatException,
+		IllegalStringLiteralException {
+			assert kind == Kind.BOOLEAN_LITERAL : "attempted to get value of non-number token";
+			if(getRawText().compareTo("true") == 0)
+				return 1;
+			else
+				return 0;
 		}
 
 		// removes quotes and handles escapes
@@ -198,10 +207,10 @@ public class TokenStream {
 			}
 			return sb.toString();
 		}
-		
-		
+
+
 		public int getLineNumber() {			
-			 /* A line termination character sequence is a character or character pair
+			/* A line termination character sequence is a character or character pair
 			 * from the set: \n, \r, \r\n, \u0085, \u2028, and \u2029. */          
 			if(this.kind == Kind.EOF){
 				return(Math.abs(Arrays.binarySearch(lineBreaks, beg))) + 1;

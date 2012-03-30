@@ -6,7 +6,6 @@ import java.util.List;
 import edu.ufl.cise.cop5555.sp12.TokenStream;
 import edu.ufl.cise.cop5555.sp12.TokenStream.Token;
 import edu.ufl.cise.cop5555.sp12.ast.*;
-import edu.ufl.cise.cop5555.sp12.context.ContextCheckVisitor;
 
 public class Parser {
 
@@ -375,7 +374,7 @@ public class Parser {
 
 		return false;
 	}
-	
+	/*
 //	 TESTS
 	public static void main (String args[]) throws SyntaxException{
 		//TokenStream stream = new TokenStream("prog phuong map[int,map[int, boolean]] ph; gorp");
@@ -497,7 +496,7 @@ public class Parser {
 					"z = x;" +
 				"od;" +
 				"x = y;"+
-			"gorp";*/
+			"gorp";*//*
 		//String input = "prog Test1 int x; boolean y; string s; map [int, string] m; x = s/m; gorp";
 		//String input = "prog Test1 int x; map[int,int] y; x = x * y; gorp";
 		//String input = "prog Test1 int x; map[int,int] y; y = y - x; gorp";
@@ -533,7 +532,7 @@ public class Parser {
 
 		//	SyntaxException e = parser.parse();
 		//	System.out.println(e.getMessage());
-		
-	}
+	/*	
+	} */
 
 }

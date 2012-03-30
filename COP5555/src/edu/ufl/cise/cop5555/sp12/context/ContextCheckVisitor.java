@@ -223,8 +223,9 @@ public class ContextCheckVisitor implements ASTVisitor{
 		check(dec != null, simpleLValue, "variable  " + ident + " does not exist in symbol table");
 		check(existInScope, simpleLValue, "variable " + ident + " is undefined in current scope");	
 
+		simpleLValue.type = dec.type;
 		//<SimpleLValue>.type := IDENTIFIER.type where the type of the IDENTIFIER is obtained from the symbol table		
-		return dec.type;
+		return simpleLValue.type;
 	}
 
 	@Override
