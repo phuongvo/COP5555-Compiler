@@ -1,14 +1,34 @@
 prog demo
- 	int x;
- 	x = 5;
-	print(x);
-	
+
 	string s;
 	s = "hi";
-	print(s);
+	string t;
+	t = "hj";
 	
 	boolean b;
 	b = true;
-	print(b);
+	boolean c;
+	c = false;
+	
+	println("if test");
+	if(s == t)
+		println("if statement is good");
+		println("yay!!");
+	fi;
+ 	
+	
+	println("----while loop----");
+	
+##	do(false) ##
+##		println("loop block"); ##
+##	od; ##
+	
+	println("----if stmt------");
+		
+	if(4 < 5)
+		println("if lock");
+	else
+		println("else block");
+	fi;
 
 gorp

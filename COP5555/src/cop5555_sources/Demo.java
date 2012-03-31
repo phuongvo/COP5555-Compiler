@@ -3,18 +3,37 @@ package cop5555_sources;
 import java.util.HashMap;
 
 public class Demo {
-	static String s;
+	static String s,t;
 	static int x,y;
-	static boolean b;
+	static boolean b,c;
 //	static HashMap m;
 	
 	public static void main(String[] args){
 		b = false;
-		System.out.print(b);
+		c = false;
 		x = 5;
-		System.out.print(x);
-		s = "Go Gators";
-		System.out.print(s);
+		y = 6;
+		s = "hi";
+		t = "hi";
+		
+		System.out.println();
+		
+		boolean res = s.compareTo(t) == 0;
+		
+		if(res == true)
+			System.out.print(s);
+		if(b == false){
+			System.out.println(s);}
+		if(s.compareTo("hi") == 0){
+			System.out.println(s);}
+		
+		
+	/*	if(b==false)
+			s = "d";	
+		else
+			s = "g";*/
+		
+
 
 	}
 	

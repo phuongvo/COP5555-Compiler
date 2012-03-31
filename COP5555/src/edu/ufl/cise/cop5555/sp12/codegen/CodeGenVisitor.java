@@ -32,7 +32,6 @@ import edu.ufl.cise.cop5555.sp12.ast.Program;
 import edu.ufl.cise.cop5555.sp12.ast.SimpleLValue;
 import edu.ufl.cise.cop5555.sp12.ast.SimpleType;
 import edu.ufl.cise.cop5555.sp12.ast.StringLiteralExpression;
-import edu.ufl.cise.cop5555.sp12.ast.Type;
 import edu.ufl.cise.cop5555.sp12.ast.UnaryOpExpression;
 
 public class CodeGenVisitor implements ASTVisitor, Opcodes {
@@ -84,8 +83,7 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 			and appropriate type to the classfile */
 
 		String fieldName = declaration.ident.getText();  
-		String fieldType = (String) declaration.type.visit(this, null);
-		
+		String fieldType = (String) declaration.type.visit(this, null);		
 		fv = cw.visitField(ACC_STATIC, fieldName, fieldType, null, null);
 		fv.visitEnd();
 
@@ -143,8 +141,7 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 		//Generate code to invoke System.out.print with the value of the Expression as a parameter.
 		mv.visitFieldInsn(GETSTATIC, "java/lang/System", "out", "Ljava/io/PrintStream;");
 		String fieldType = (String) printCommand.expression.visit(this, null);
-		String type = "("+fieldType+")V";
-		
+		String type = "("+fieldType+")V";		
 		mv.visitMethodInsn(INVOKEVIRTUAL, "java/io/PrintStream", "print", type);			
 		
 		return null;
@@ -164,7 +161,13 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 	@Override
 	public Object visitDoCommand(DoCommand doCommand, Object arg)
 			throws Exception {
-		// TODO Auto-generated method stub
+		// Generate as if for a Java while loop.
+		
+		Label loop = new Label();
+		mv.visitLabel(loop);
+		mv.visitFrame(Opcodes.F_SAME, 0, null, 0, null);
+		doCommand.block.visit(this,null);	
+		mv.visitJumpInsn(GOTO, loop);
 		return null;
 	}
 
@@ -178,14 +181,27 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 	@Override
 	public Object visitIfCommand(IfCommand ifCommand, Object arg)
 			throws Exception {
-		// TODO Auto-generated method stub
+		// Generate code as if for a Java if statement
+
+		ifCommand.expression.visit(this,arg); 
+		mv.visitVarInsn(ILOAD, 1);
+		
+		Label skip = new Label();
+		mv.visitJumpInsn(IFEQ, skip);
+		
+		ifCommand.block.visit(this,arg); 	
+		mv.visitLabel(skip);
+		
 		return null;
 	}
 
 	@Override
 	public Object visitIfElseCommand(IfElseCommand ifElseCommand, Object arg)
 			throws Exception {
-		// TODO Auto-generated method stub
+		// Generate code as if for a Java if-else statement
+
+		ifElseCommand.ifBlock.visit(this,arg); 		
+		ifElseCommand.elseBlock.visit(this,arg); 
 		return null;
 	}
 
@@ -231,7 +247,7 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 			IntegerLiteralExpression integerLiteralExpression, Object arg)
 					throws Exception {
 		//gen code to leave value of literal on top of stack
-		mv.visitInsn(integerLiteralExpression.integerLiteral.getIntVal());
+		mv.visitLdcInsn(integerLiteralExpression.integerLiteral.getIntVal());
 		return "I";
 	}
 
@@ -260,14 +276,62 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 	@Override
 	public Object visitUnaryOpExpression(UnaryOpExpression unaryOpExpression,
 			Object arg) throws Exception {
-		// TODO Auto-generated method stub
+		// if op is -, negate the value on top of the stack, 
+		//if op is !, logically negate the value on top of the stack.
 		return null;
 	}
 
 	@Override
 	public Object visitBinaryOpExpression(
 			BinaryOpExpression binaryOpExpression, Object arg) throws Exception {
-		// TODO Auto-generated method stub
+		// Generate code to leave the value of the expression on top of the stack.
+		
+		Kind op = binaryOpExpression.op;
+		String type1 = (String) binaryOpExpression.expression0.visit(this, arg); //put first value on stack
+		String type2 = (String) binaryOpExpression.expression1.visit(this, arg); //put second value on stack
+		
+		if(type1.compareTo("Ljava/lang/String;") == 0){
+			type1 = "S";
+			type2 = "S";
+		}
+		
+		
+		if(op == Kind.EQUALS){
+			if(type1.compareTo("I") == 0 || type1.compareTo("Z") == 0){
+				
+				Label neq = new Label();
+				mv.visitJumpInsn(IF_ICMPNE, neq);
+				
+				mv.visitInsn(ICONST_1);
+				Label end = new Label();
+				mv.visitJumpInsn(GOTO, end);
+				
+				mv.visitLabel(neq);
+				mv.visitInsn(ICONST_0);
+				
+				mv.visitLabel(end);
+				mv.visitVarInsn(ISTORE, 1);
+			}
+			
+			if(type1.compareTo("S") == 0){
+				
+				mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "compareTo", "(Ljava/lang/String;)I");
+				Label ne = new Label();
+				mv.visitJumpInsn(IFNE, ne);
+				
+				mv.visitInsn(ICONST_1);				
+				Label end = new Label();
+				mv.visitJumpInsn(GOTO, end);
+				
+				mv.visitLabel(ne);
+				mv.visitInsn(ICONST_0);
+				
+				mv.visitLabel(end);
+				mv.visitVarInsn(ISTORE, 1);			
+				
+			}
+		}
+			
 		return null;
 	}
 
