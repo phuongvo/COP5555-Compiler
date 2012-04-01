@@ -1,34 +1,27 @@
 prog demo
 
-	string s;
-	s = "hi";
-	string t;
-	t = "hj";
-	
-	boolean b;
-	b = true;
-	boolean c;
-	c = false;
-	
-	println("if test");
-	if(s == t)
-		println("if statement is good");
-		println("yay!!");
-	fi;
- 	
-	
-	println("----while loop----");
-	
-##	do(false) ##
-##		println("loop block"); ##
-##	od; ##
-	
-	println("----if stmt------");
-		
-	if(4 < 5)
-		println("if lock");
-	else
-		println("else block");
-	fi;
+	int x;
+	int y;
+	int d;
 
+	x = 5;
+	y = 6;
+	
+	d = -x;
+	println(d);
+	
+	if(x != y)
+		println(y);
+	else
+		println(x);
+	fi;
+	
+	do(x != y)
+		println("x = " + x);
+		println("y = " + y);
+		x = 6;
+		println("x = " + x); 
+		println("x !=y is " + (x != y));	
+	od;
+	
 gorp

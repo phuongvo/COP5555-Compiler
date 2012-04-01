@@ -42,7 +42,6 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 	MethodVisitor mv;
 	AnnotationVisitor av0;
 
-
 	@Override
 	public Object visitProgram(Program program, Object arg) throws Exception {
 		className = program.ident.getText();
@@ -103,7 +102,7 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 		case BOOLEAN:
 			return "Z";
 		}
-		
+
 		return null;
 	}
 
@@ -123,7 +122,7 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 
 		String type = (String) assignExprCommand.expression.visit(this, null);		
 		mv.visitFieldInsn(PUTSTATIC, className, varName, type);
-		
+
 		return null;
 	}
 
@@ -143,7 +142,7 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 		String fieldType = (String) printCommand.expression.visit(this, null);
 		String type = "("+fieldType+")V";		
 		mv.visitMethodInsn(INVOKEVIRTUAL, "java/io/PrintStream", "print", type);			
-		
+
 		return null;
 	}
 
@@ -162,12 +161,20 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 	public Object visitDoCommand(DoCommand doCommand, Object arg)
 			throws Exception {
 		// Generate as if for a Java while loop.
+
+		Label test = new Label();
+		Label block = new Label();
+		Label end = new Label();
 		
-		Label loop = new Label();
-		mv.visitLabel(loop);
-		mv.visitFrame(Opcodes.F_SAME, 0, null, 0, null);
-		doCommand.block.visit(this,null);	
-		mv.visitJumpInsn(GOTO, loop);
+		mv.visitLabel(test);
+		doCommand.expression.visit(this, arg);
+		mv.visitJumpInsn(IFEQ, end); //if false
+		mv.visitLabel(block);
+		doCommand.block.visit(this, null);	
+		mv.visitJumpInsn(GOTO, test);
+		mv.visitLabel(end);
+		
+		
 		return null;
 	}
 
@@ -182,16 +189,11 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 	public Object visitIfCommand(IfCommand ifCommand, Object arg)
 			throws Exception {
 		// Generate code as if for a Java if statement
-
 		ifCommand.expression.visit(this,arg); 
-		mv.visitVarInsn(ILOAD, 1);
-		
 		Label skip = new Label();
-		mv.visitJumpInsn(IFEQ, skip);
-		
-		ifCommand.block.visit(this,arg); 	
-		mv.visitLabel(skip);
-		
+		mv.visitJumpInsn(IFEQ, skip);	//if false
+		ifCommand.block.visit(this,arg); 		
+		mv.visitLabel(skip);	
 		return null;
 	}
 
@@ -200,8 +202,16 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 			throws Exception {
 		// Generate code as if for a Java if-else statement
 
-		ifElseCommand.ifBlock.visit(this,arg); 		
+		Label elsestmt = new Label();
+		Label end = new Label();
+
+		ifElseCommand.expression.visit(this,arg); 
+		mv.visitJumpInsn(IFEQ, elsestmt);	//if false
+		ifElseCommand.ifBlock.visit(this,arg); 	 
+		mv.visitJumpInsn(GOTO, end);
+		mv.visitLabel(elsestmt);			
 		ifElseCommand.elseBlock.visit(this,arg); 
+		mv.visitLabel(end);
 		return null;
 	}
 
@@ -237,7 +247,7 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 		// Generate code to leave the value of the expression on top of the stack
 		String varName = (String) lValueExpression.lValue.visit(this, arg);
 		String type = lValueExpression.lValue.type.javaType;
-		
+
 		mv.visitFieldInsn(GETSTATIC, className, varName, type);		
 		return type;
 	}
@@ -278,61 +288,198 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 			Object arg) throws Exception {
 		// if op is -, negate the value on top of the stack, 
 		//if op is !, logically negate the value on top of the stack.
-		return null;
+		Kind op = unaryOpExpression.op;	
+		unaryOpExpression.expression.visit(this, arg);
+		String type = null;
+
+		switch(op){
+		case MINUS:	//int
+
+			mv.visitInsn(DUP);
+			mv.visitInsn(INEG);
+			type = "I";
+			break;
+		case NOT:	//boolean			
+			Label not = new Label();
+			mv.visitJumpInsn(IFEQ, not);
+			mv.visitInsn(ICONST_0);
+			Label not2 = new Label();
+			mv.visitJumpInsn(GOTO, not2);
+			mv.visitLabel(not);
+			mv.visitInsn(ICONST_1);
+			mv.visitLabel(not2);
+			type = "Z";
+			break;
+		}
+		return type;
 	}
 
 	@Override
 	public Object visitBinaryOpExpression(
 			BinaryOpExpression binaryOpExpression, Object arg) throws Exception {
 		// Generate code to leave the value of the expression on top of the stack.
-		
+
 		Kind op = binaryOpExpression.op;
 		String type1 = (String) binaryOpExpression.expression0.visit(this, arg); //put first value on stack
 		String type2 = (String) binaryOpExpression.expression1.visit(this, arg); //put second value on stack
-		
-		if(type1.compareTo("Ljava/lang/String;") == 0){
-			type1 = "S";
-			type2 = "S";
-		}
-		
-		
-		if(op == Kind.EQUALS){
+
+		switch(op){
+		case EQUALS:		
 			if(type1.compareTo("I") == 0 || type1.compareTo("Z") == 0){
-				
+
 				Label neq = new Label();
 				mv.visitJumpInsn(IF_ICMPNE, neq);
-				
+
 				mv.visitInsn(ICONST_1);
 				Label end = new Label();
 				mv.visitJumpInsn(GOTO, end);
-				
+
 				mv.visitLabel(neq);
 				mv.visitInsn(ICONST_0);
-				
+
 				mv.visitLabel(end);
-				mv.visitVarInsn(ISTORE, 1);
 			}
-			
-			if(type1.compareTo("S") == 0){
-				
+			else if(type1.compareTo("Ljava/lang/String;") == 0){				
 				mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "compareTo", "(Ljava/lang/String;)I");
 				Label ne = new Label();
 				mv.visitJumpInsn(IFNE, ne);
-				
+
 				mv.visitInsn(ICONST_1);				
 				Label end = new Label();
 				mv.visitJumpInsn(GOTO, end);
-				
+
 				mv.visitLabel(ne);
 				mv.visitInsn(ICONST_0);
-				
-				mv.visitLabel(end);
-				mv.visitVarInsn(ISTORE, 1);			
-				
+
+				mv.visitLabel(end);			
 			}
+			break;
+		case NOT_EQUALS:		
+			if(type1.compareTo("I") == 0 || type1.compareTo("Z") == 0){
+
+				Label neq = new Label();
+				mv.visitJumpInsn(IF_ICMPEQ, neq);
+
+				mv.visitInsn(ICONST_1);
+				Label end = new Label();
+				mv.visitJumpInsn(GOTO, end);
+
+				mv.visitLabel(neq);
+				mv.visitInsn(ICONST_0);
+
+				mv.visitLabel(end);
+			}
+			else if(type1.compareTo("Ljava/lang/String;") == 0){				
+				mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "compareTo", "(Ljava/lang/String;)I");
+				Label ne = new Label();
+				mv.visitJumpInsn(IFEQ, ne);
+
+				mv.visitInsn(ICONST_1);				
+				Label end = new Label();
+				mv.visitJumpInsn(GOTO, end);
+
+				mv.visitLabel(ne);
+				mv.visitInsn(ICONST_0);
+
+				mv.visitLabel(end);		
+			}
+			break;
+		case PLUS:
+			//addition
+			if(type1.compareTo("I") == 0 && type2.compareTo("I") == 0){
+				mv.visitInsn(IADD);
+			}
+			//string concatenation
+			else if(type1.compareTo("Ljava/lang/String;") == 0 || type2.compareTo("Ljava/lang/String;") == 0){
+				mv.visitInsn(SWAP);
+				mv.visitTypeInsn(NEW, "java/lang/StringBuilder");
+				mv.visitInsn(DUP);				
+				mv.visitMethodInsn(INVOKESPECIAL, "java/lang/StringBuilder", "<init>", "()V");
+				mv.visitInsn(SWAP);
+				mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/StringBuilder", "append", "("+type1+")Ljava/lang/StringBuilder;");
+				mv.visitInsn(SWAP);
+				mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/StringBuilder", "append", "("+type2+")Ljava/lang/StringBuilder;");
+				mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/StringBuilder", "toString", "()Ljava/lang/String;");	
+				type1 = "Ljava/lang/String;";
+			}
+			break;
+		case MINUS:
+			if(type1.compareTo("I") == 0){	//integer
+				mv.visitInsn(ISUB);
+			}
+			else {} //map to be implemented
+			break;
+		case TIMES:
+			mv.visitInsn(IMUL);
+			break;
+		case DIVIDE:
+			mv.visitInsn(IDIV);
+			break;
+		case AND:
+			Label l1 = new Label();
+			mv.visitJumpInsn(IFEQ, l1);
+			mv.visitInsn(ICONST_0);
+			Label endl1 = new Label();
+			mv.visitJumpInsn(GOTO, endl1);
+			mv.visitLabel(l1);
+			mv.visitInsn(ICONST_1);
+			mv.visitLabel(endl1);
+			break;
+		case OR:
+			Label l2 = new Label();
+			mv.visitJumpInsn(IFEQ, l2);
+			mv.visitInsn(ICONST_1);
+			Label endl2 = new Label();
+			mv.visitJumpInsn(GOTO, endl2);
+			mv.visitLabel(l2);
+			mv.visitInsn(ICONST_0);
+			mv.visitLabel(endl2);
+			break;
+		case LESS_THAN:
+			Label lt = new Label();
+			mv.visitJumpInsn(IF_ICMPGE, lt);
+			mv.visitInsn(ICONST_1);
+			Label lt2 = new Label();
+			mv.visitJumpInsn(GOTO, lt2);
+			mv.visitLabel(lt);
+			mv.visitInsn(ICONST_0);
+			mv.visitLabel(lt2);
+			break;
+		case GREATER_THAN:
+			Label gt = new Label();
+			mv.visitJumpInsn(IF_ICMPLE, gt);
+			mv.visitInsn(ICONST_1);
+			Label gt2 = new Label();
+			mv.visitJumpInsn(GOTO, gt2);
+			mv.visitLabel(gt);
+			mv.visitInsn(ICONST_0);
+			mv.visitLabel(gt2);
+			break;
+		case AT_MOST:
+			Label at = new Label();
+			mv.visitJumpInsn(IF_ICMPGT, at);
+			mv.visitInsn(ICONST_1);
+			Label at2 = new Label();
+			mv.visitJumpInsn(GOTO, at2);
+			mv.visitLabel(at);
+			mv.visitInsn(ICONST_0);
+			mv.visitLabel(at2);
+			break;
+		case AT_LEAST:
+			Label al = new Label();
+			mv.visitJumpInsn(IF_ICMPLT, al);
+			mv.visitInsn(ICONST_1);
+			Label al2 = new Label();
+			mv.visitJumpInsn(GOTO, al2);
+			mv.visitLabel(al);
+			mv.visitInsn(ICONST_0);
+			mv.visitLabel(al2);
+			break;
 		}
-			
-		return null;
+
+		return type1;
 	}
+
+
 
 }

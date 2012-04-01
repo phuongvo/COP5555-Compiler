@@ -361,7 +361,7 @@ public class ContextCheckVisitor implements ASTVisitor{
 				check(false, binaryOpExpression, "cannot add type boolean");
 		}
 
-		//==, !=, >, <, ≤, ≥ apply to any type and the result is boolean
+		//==, !=, >, <, <=, >= apply to any type and the result is boolean
 		if(op.equals(Kind.EQUALS) || op.equals(Kind.NOT_EQUALS) ||op.equals(Kind.GREATER_THAN) 
 				||op.equals(Kind.LESS_THAN) ||op.equals(Kind.AT_MOST) ||op.equals(Kind.AT_LEAST))
 			exprType = new SimpleType(Kind.BOOLEAN);
@@ -389,7 +389,8 @@ public class ContextCheckVisitor implements ASTVisitor{
 		if(op.equals(Kind.AND) || op.equals(Kind.OR)){
 			if(e0Type.type.equals(Kind.BOOLEAN))
 				exprType = e0Type;
-			check(false, binaryOpExpression, "expecting type boolean in binaryOpExpressions");
+			else
+				check(false, binaryOpExpression, "expecting type boolean in binaryOpExpressions");
 		}
 
 		return exprType;
