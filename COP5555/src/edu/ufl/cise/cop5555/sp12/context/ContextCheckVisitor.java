@@ -362,10 +362,15 @@ public class ContextCheckVisitor implements ASTVisitor{
 		}
 
 		//==, !=, >, <, <=, >= apply to any type and the result is boolean
-		if(op.equals(Kind.EQUALS) || op.equals(Kind.NOT_EQUALS) ||op.equals(Kind.GREATER_THAN) 
-				||op.equals(Kind.LESS_THAN) ||op.equals(Kind.AT_MOST) ||op.equals(Kind.AT_LEAST))
+		if(op.equals(Kind.EQUALS) || op.equals(Kind.NOT_EQUALS) ||op.equals(Kind.AT_MOST))
 			exprType = new SimpleType(Kind.BOOLEAN);
 
+		if(op.equals(Kind.GREATER_THAN) ||op.equals(Kind.LESS_THAN) ||op.equals(Kind.AT_LEAST)){
+			check(!e0Type.type.equals(Kind.STRING), binaryOpExpression, "undefined for type String");
+			exprType = new SimpleType(Kind.BOOLEAN);
+		}
+		
+		
 		// * and - can be applied to integers and maps. The result is the same as the argument type
 		if(op.equals(Kind.TIMES) || op.equals(Kind.MINUS)){
 			if(e0Type.type.equals(Kind.INT))

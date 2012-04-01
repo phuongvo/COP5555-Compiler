@@ -1,16 +1,26 @@
 prog demo
 
-	int x;
+	int x = 5;
 	int y;
 	int d;
-
-	x = 5;
-	y = 6;
 	
-	d = -x;
-	println(d);
+	y = 6;
+	boolean b;
+	boolean c;
+	
+	string s;
+	string t;
+	s = "cop";
+	t = "copper";
+	
+	println(s <= t);
+	println(t <= s);
+	
+	println("hi " + "phuong");
+	
 	
 	if(x != y)
+		boolean x;
 		println(y);
 	else
 		println(x);

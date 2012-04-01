@@ -165,7 +165,7 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 		Label test = new Label();
 		Label block = new Label();
 		Label end = new Label();
-		
+
 		mv.visitLabel(test);
 		doCommand.expression.visit(this, arg);
 		mv.visitJumpInsn(IFEQ, end); //if false
@@ -173,8 +173,8 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 		doCommand.block.visit(this, null);	
 		mv.visitJumpInsn(GOTO, test);
 		mv.visitLabel(end);
-		
-		
+
+
 		return null;
 	}
 
@@ -257,6 +257,7 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 			IntegerLiteralExpression integerLiteralExpression, Object arg)
 					throws Exception {
 		//gen code to leave value of literal on top of stack
+
 		mv.visitLdcInsn(integerLiteralExpression.integerLiteral.getIntVal());
 		return "I";
 	}
@@ -278,7 +279,7 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 			StringLiteralExpression stringLiteralExpression, Object arg)
 					throws Exception {
 		//gen code to leave value of string on top of stack
-		String s = stringLiteralExpression.stringLiteral.getRawText();
+		String s = stringLiteralExpression.stringLiteral.getText();
 		mv.visitLdcInsn(s);		
 		return "Ljava/lang/String;";
 	}
@@ -294,8 +295,6 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 
 		switch(op){
 		case MINUS:	//int
-
-			mv.visitInsn(DUP);
 			mv.visitInsn(INEG);
 			type = "I";
 			break;
@@ -351,8 +350,9 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 				mv.visitLabel(ne);
 				mv.visitInsn(ICONST_0);
 
-				mv.visitLabel(end);			
+				mv.visitLabel(end);	
 			}
+			type1 = "Z";
 			break;
 		case NOT_EQUALS:		
 			if(type1.compareTo("I") == 0 || type1.compareTo("Z") == 0){
@@ -381,8 +381,9 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 				mv.visitLabel(ne);
 				mv.visitInsn(ICONST_0);
 
-				mv.visitLabel(end);		
+				mv.visitLabel(end);	
 			}
+			type1 = "Z";
 			break;
 		case PLUS:
 			//addition
@@ -434,8 +435,9 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 			mv.visitLabel(l2);
 			mv.visitInsn(ICONST_0);
 			mv.visitLabel(endl2);
+			type1 = "Z";
 			break;
-		case LESS_THAN:
+		case LESS_THAN:	// <
 			Label lt = new Label();
 			mv.visitJumpInsn(IF_ICMPGE, lt);
 			mv.visitInsn(ICONST_1);
@@ -444,8 +446,9 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 			mv.visitLabel(lt);
 			mv.visitInsn(ICONST_0);
 			mv.visitLabel(lt2);
+			type1 = "Z";
 			break;
-		case GREATER_THAN:
+		case GREATER_THAN:	// >
 			Label gt = new Label();
 			mv.visitJumpInsn(IF_ICMPLE, gt);
 			mv.visitInsn(ICONST_1);
@@ -454,19 +457,27 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 			mv.visitLabel(gt);
 			mv.visitInsn(ICONST_0);
 			mv.visitLabel(gt2);
+			type1 = "Z";
 			break;
-		case AT_MOST:
-			Label at = new Label();
-			mv.visitJumpInsn(IF_ICMPGT, at);
-			mv.visitInsn(ICONST_1);
-			Label at2 = new Label();
-			mv.visitJumpInsn(GOTO, at2);
-			mv.visitLabel(at);
-			mv.visitInsn(ICONST_0);
-			mv.visitLabel(at2);
+		case AT_MOST:	// <= 
+			if(type1.compareTo("I") == 0){
+				Label at = new Label();
+				mv.visitJumpInsn(IF_ICMPGT, at);
+				mv.visitInsn(ICONST_1);
+				Label at2 = new Label();
+				mv.visitJumpInsn(GOTO, at2);
+				mv.visitLabel(at);
+				mv.visitInsn(ICONST_0);
+				mv.visitLabel(at2);
+			}
+			else if (type1.compareTo("Ljava/lang/String;") == 0){ //Prefix or equals relation (invoke the startsWith method of the String class)
+				mv.visitInsn(SWAP);
+				mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "startsWith", "(Ljava/lang/String;)Z");				
+			}
+			type1 = "Z";
 			break;
 		case AT_LEAST:
-			Label al = new Label();
+			Label al = new Label(); // >=
 			mv.visitJumpInsn(IF_ICMPLT, al);
 			mv.visitInsn(ICONST_1);
 			Label al2 = new Label();
@@ -474,6 +485,7 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 			mv.visitLabel(al);
 			mv.visitInsn(ICONST_0);
 			mv.visitLabel(al2);
+			type1 = "Z";
 			break;
 		}
 

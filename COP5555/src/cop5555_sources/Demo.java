@@ -9,10 +9,16 @@ public class Demo {
 	public static void main(String[] args){
 		b = true;
 		c = false;
-		x = 5;
+		x = 50;
 		y = 6;
 		s = "hi";
-		t = "phuong";
+		t = "hit";
+		
+		System.out.print("startswith");
+		
+		b = "a".startsWith("an");
+
+		System.out.println(b);
 		
 		System.out.print(-x);
 		d = !b;
