@@ -14,6 +14,8 @@ public class Demo {
 		s = "hi";
 		t = "hit";
 		
+		y = -x;
+		
 		System.out.print("startswith");
 		
 		b = "a".startsWith("an");

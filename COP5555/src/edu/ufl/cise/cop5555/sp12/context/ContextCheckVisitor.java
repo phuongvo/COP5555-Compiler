@@ -1,6 +1,7 @@
 package edu.ufl.cise.cop5555.sp12.context;
 
 
+import java.util.ArrayList;
 import java.util.List;
 
 import edu.ufl.cise.cop5555.sp12.ast.Type;
@@ -36,6 +37,7 @@ public class ContextCheckVisitor implements ASTVisitor{
 
 	private SymbolTable symbolTable = new SymbolTable();
 	String programName = new String();
+	ArrayList<SimpleLValue> alist = new ArrayList<SimpleLValue>(); //
 
 	//Check if condition met, else throw Context Exception
 	private void check(boolean condition, AST ast, String string) throws ContextException {
@@ -224,6 +226,7 @@ public class ContextCheckVisitor implements ASTVisitor{
 		check(existInScope, simpleLValue, "variable " + ident + " is undefined in current scope");	
 
 		simpleLValue.type = dec.type;
+		alist.add(simpleLValue);
 		//<SimpleLValue>.type := IDENTIFIER.type where the type of the IDENTIFIER is obtained from the symbol table		
 		return simpleLValue.type;
 	}
@@ -241,12 +244,15 @@ public class ContextCheckVisitor implements ASTVisitor{
 			in
 			keyType == <Expression>.type
 		 */
+		
 		Type exprType = (Type) exprLValue.expression.visit(this,arg);
 		CompoundType identType = (CompoundType) dec.type;
 		Type keyType = identType.keyType;
 		Type valType = identType.valType;
 		check(keyType.equals(exprType), exprLValue, "incompatible types in lvalue expression");
 
+
+		exprLValue.type = dec.type;
 		//<ExprLValue>.type = valType
 		return valType;
 	}
@@ -320,13 +326,13 @@ public class ContextCheckVisitor implements ASTVisitor{
 		Kind op = unaryOpExpression.op;		
 		check(op.equals(Kind.MINUS) || op.equals(Kind.NOT), unaryOpExpression, "not a unary op expression");
 
+		Type type = (Type) unaryOpExpression.expression.visit(this, arg);
+		
 		//if op = - then <Expression>.type = int && if op = ! then <Expression>.type = boolean
-		SimpleType type = null;
 		if(op == Kind.MINUS)
-			type = new SimpleType(Kind.INT);
+			check(type.type.equals(Kind.INT), unaryOpExpression, "not a valid type for unary op");
 		else
-			type = new SimpleType(Kind.BOOLEAN);
-
+			check(type.type.equals(Kind.BOOLEAN), unaryOpExpression, "not a valid type for unary op");
 		return type;
 	}
 

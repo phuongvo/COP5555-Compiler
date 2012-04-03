@@ -1,31 +1,51 @@
 prog demo
 
-	int x = 5;
+	int x;
 	int y;
 	int d;
 	
+	x = 5;
 	y = 6;
 	boolean b;
 	boolean c;
+	
+	b = false;
 	
 	string s;
 	string t;
 	s = "cop";
 	t = "copper";
 	
-	println(s <= t);
-	println(t <= s);
 	
+	println("x = " + x);
+	println("y = " + y);
+	println("b = " + b);
+	
+	println("----string starts with-----");
+	println("cop starts with copper = " + (s <= t));
+	println("copper starts with cop = " + (t <= s));
+	
+	println("---unaryop----");
+	println("-x = " + -x);
+	println("!b = " + !b);
+	
+	println("----string concat-----");
 	println("hi " + "phuong");
 	
-	
+	println("---if----");
 	if(x != y)
-		boolean x;
-		println(y);
+		println("int s = " + s);
+		boolean s;
+		s = false;
+		println("boolean s = " + s);
 	else
 		println(x);
 	fi;
 	
+	println("----fi-----");
+	println("int s = " + s);
+	
+	println("---do----");
 	do(x != y)
 		println("x = " + x);
 		println("y = " + y);
@@ -33,5 +53,26 @@ prog demo
 		println("x = " + x); 
 		println("x !=y is " + (x != y));	
 	od;
+	println("---declarations----");
+	x = 3;
+	println("x = " + x);
+	println("y = " + y);
+	println("s = " + s);
+	println("t = " + t);
+		
+	println("----binaryop-----");
+	println("x < y = " + (x < y));
+	println("x > y = " + (x > y));
+	println("x == y = " + (x == y));
+	println("x != y = " + (x != y));	
+	println("x <= y = " + (x <= y));	
+	println("x >= y = " + (x >= y));
+	println("x + y = " + (x + y));
+	println("x - y = " + (x - y));
+	println("x/y = " + (x/y));
+	println("x * y = " + (x * y));
+	println("s == t = " + (s == t));
+	println("s != t = " + (s != t));
 	
+		
 gorp

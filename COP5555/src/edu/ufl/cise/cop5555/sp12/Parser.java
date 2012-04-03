@@ -336,7 +336,7 @@ public class Parser {
 			}
 			else if (isKind(Kind.NOT) || isKind(Kind.MINUS)){
 				Kind k = t.kind;
-					consume();
+				consume();
 				
 				e = new UnaryOpExpression(k, Factor());
 			}

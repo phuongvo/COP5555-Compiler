@@ -167,7 +167,7 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 		Label end = new Label();
 
 		mv.visitLabel(test);
-		doCommand.expression.visit(this, arg);
+		doCommand.expression.visit(this, null);
 		mv.visitJumpInsn(IFEQ, end); //if false
 		mv.visitLabel(block);
 		doCommand.block.visit(this, null);	
@@ -245,8 +245,8 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 	public Object visitLValueExpression(LValueExpression lValueExpression,
 			Object arg) throws Exception {
 		// Generate code to leave the value of the expression on top of the stack
-		String varName = (String) lValueExpression.lValue.visit(this, arg);
-		String type = lValueExpression.lValue.type.javaType;
+		String varName = (String) lValueExpression.lValue.visit(this, null);	
+		String type = (String) lValueExpression.lValue.type.javaType;
 
 		mv.visitFieldInsn(GETSTATIC, className, varName, type);		
 		return type;
@@ -290,13 +290,11 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 		// if op is -, negate the value on top of the stack, 
 		//if op is !, logically negate the value on top of the stack.
 		Kind op = unaryOpExpression.op;	
-		unaryOpExpression.expression.visit(this, arg);
-		String type = null;
-
+		String type = (String) unaryOpExpression.expression.visit(this, null);
+	
 		switch(op){
 		case MINUS:	//int
 			mv.visitInsn(INEG);
-			type = "I";
 			break;
 		case NOT:	//boolean			
 			Label not = new Label();
@@ -307,7 +305,6 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 			mv.visitLabel(not);
 			mv.visitInsn(ICONST_1);
 			mv.visitLabel(not2);
-			type = "Z";
 			break;
 		}
 		return type;
@@ -319,8 +316,8 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 		// Generate code to leave the value of the expression on top of the stack.
 
 		Kind op = binaryOpExpression.op;
-		String type1 = (String) binaryOpExpression.expression0.visit(this, arg); //put first value on stack
-		String type2 = (String) binaryOpExpression.expression1.visit(this, arg); //put second value on stack
+		String type1 = (String) binaryOpExpression.expression0.visit(this, null); //put first value on stack
+		String type2 = (String) binaryOpExpression.expression1.visit(this, null); //put second value on stack
 
 		switch(op){
 		case EQUALS:		
